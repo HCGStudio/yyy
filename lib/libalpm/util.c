@@ -677,7 +677,7 @@ int _alpm_run_chroot(alpm_handle_t *handle, const char *cmd, char *const argv[],
 		_alpm_reset_signals();
 		execv(cmd, argv);
 		/* execv only returns if there was an error */
-		fprintf(stderr, _("call to execv failed (%s)\n"), strerror(errno));
+		fprintf(stderr, _("failed to execv '%s' (%s)\n"), cmd, strerror(errno));
 		exit(1);
 	} else {
 		/* this code runs for the parent only (wait on the child) */
@@ -756,7 +756,7 @@ int _alpm_run_chroot(alpm_handle_t *handle, const char *cmd, char *const argv[],
 
 		while(waitpid(pid, &status, 0) == -1) {
 			if(errno != EINTR) {
-				_alpm_log(handle, ALPM_LOG_ERROR, _("call to waitpid failed (%s)\n"), strerror(errno));
+				_alpm_log(handle, ALPM_LOG_ERROR, _("call to waitpid for '%s' failed (%s)\n"), cmd, strerror(errno));
 				retval = 1;
 				goto cleanup;
 			}
@@ -766,7 +766,7 @@ int _alpm_run_chroot(alpm_handle_t *handle, const char *cmd, char *const argv[],
 		if(WIFEXITED(status)) {
 			_alpm_log(handle, ALPM_LOG_DEBUG, "call to waitpid succeeded\n");
 			if(WEXITSTATUS(status) != 0) {
-				_alpm_log(handle, ALPM_LOG_ERROR, _("command failed to execute correctly\n"));
+				_alpm_log(handle, ALPM_LOG_ERROR, _("command '%s' failed to execute correctly\n"), cmd);
 				retval = 1;
 			}
 		} else if(WIFSIGNALED(status) != 0) {
@@ -775,8 +775,8 @@ int _alpm_run_chroot(alpm_handle_t *handle, const char *cmd, char *const argv[],
 			if(signal_description == NULL) {
 				signal_description = _("Unknown signal");
 			}
-			_alpm_log(handle, ALPM_LOG_ERROR, _("command terminated by signal %d: %s\n"),
-						WTERMSIG(status), signal_description);
+			_alpm_log(handle, ALPM_LOG_ERROR, _("command '%s' terminated by signal %d: %s\n"),
+						cmd, WTERMSIG(status), signal_description);
 			retval = 1;
 		}
 	}
