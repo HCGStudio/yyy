@@ -766,7 +766,8 @@ int _alpm_run_chroot(alpm_handle_t *handle, const char *name, const char *cmd,
 		if(WIFEXITED(status)) {
 			_alpm_log(handle, ALPM_LOG_DEBUG, "call to waitpid succeeded\n");
 			if(WEXITSTATUS(status) != 0) {
-				_alpm_log(handle, ALPM_LOG_ERROR, _("%s: command '%s' failed to execute correctly\n"), name, cmd);
+				_alpm_log(handle, ALPM_LOG_ERROR, _("%s: command '%s' failed to execute correctly (exited %d)\n"),
+						name, cmd, WEXITSTATUS(status));
 				retval = 1;
 			}
 		} else if(WIFSIGNALED(status) != 0) {
