@@ -334,13 +334,14 @@ static int grep(const char *fn, const char *needle)
 	return 0;
 }
 
-int _alpm_runscriptlet(alpm_handle_t *handle, const char *filepath,
+int _alpm_runscriptlet(alpm_handle_t *handle, const char *pkgname, const char *filepath,
 		const char *script, const char *ver, const char *oldver, int is_archive)
 {
 	char arg0[64], arg1[3], cmdline[PATH_MAX];
 	char *argv[] = { arg0, arg1, cmdline, NULL };
-	char *tmpdir, *scriptfn = NULL, *scriptpath;
+	char *human_name = NULL, *tmpdir, *scriptfn = NULL, *scriptpath;
 	int retval = 0;
+	size_t human_name_len = strlen(pkgname) + strlen(".install") + 1;
 	size_t len;
 
 	if(_alpm_access(handle, NULL, filepath, R_OK) != 0) {
@@ -405,9 +406,12 @@ int _alpm_runscriptlet(alpm_handle_t *handle, const char *filepath,
 				scriptpath, script, ver);
 	}
 
+	human_name = malloc(human_name_len);
+	snprintf(human_name, human_name_len, "%s.install", pkgname);
+
 	_alpm_log(handle, ALPM_LOG_DEBUG, "executing \"%s\"\n", cmdline);
 
-	retval = _alpm_run_chroot(handle, SCRIPTLET_SHELL, argv, NULL, NULL);
+	retval = _alpm_run_chroot(handle, human_name, SCRIPTLET_SHELL, argv, NULL, NULL);
 
 cleanup:
 	if(scriptfn && unlink(scriptfn)) {
@@ -419,6 +423,7 @@ cleanup:
 				_("could not remove tmpdir %s\n"), tmpdir);
 	}
 
+	free(human_name);
 	free(scriptfn);
 	free(tmpdir);
 	return retval;

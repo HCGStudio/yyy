@@ -588,8 +588,8 @@ static void _alpm_reset_signals(void)
  * @param stdin_ctx context to be passed to @a stdin_cb
  * @return 0 on success, 1 on error
  */
-int _alpm_run_chroot(alpm_handle_t *handle, const char *cmd, char *const argv[],
-		_alpm_cb_io stdin_cb, void *stdin_ctx)
+int _alpm_run_chroot(alpm_handle_t *handle, const char *name, const char *cmd,
+		char *const argv[], _alpm_cb_io stdin_cb, void *stdin_ctx)
 {
 	pid_t pid;
 	int child2parent_pipefd[2], parent2child_pipefd[2];
@@ -677,7 +677,7 @@ int _alpm_run_chroot(alpm_handle_t *handle, const char *cmd, char *const argv[],
 		_alpm_reset_signals();
 		execv(cmd, argv);
 		/* execv only returns if there was an error */
-		fprintf(stderr, _("failed to execv '%s' (%s)\n"), cmd, strerror(errno));
+		fprintf(stderr, _("%s: failed to execv '%s' (%s)\n"), name, cmd, strerror(errno));
 		exit(1);
 	} else {
 		/* this code runs for the parent only (wait on the child) */
@@ -756,7 +756,7 @@ int _alpm_run_chroot(alpm_handle_t *handle, const char *cmd, char *const argv[],
 
 		while(waitpid(pid, &status, 0) == -1) {
 			if(errno != EINTR) {
-				_alpm_log(handle, ALPM_LOG_ERROR, _("call to waitpid for '%s' failed (%s)\n"), cmd, strerror(errno));
+				_alpm_log(handle, ALPM_LOG_ERROR, _("%s: call to waitpid for '%s' failed (%s)\n"), name, cmd, strerror(errno));
 				retval = 1;
 				goto cleanup;
 			}
@@ -766,7 +766,7 @@ int _alpm_run_chroot(alpm_handle_t *handle, const char *cmd, char *const argv[],
 		if(WIFEXITED(status)) {
 			_alpm_log(handle, ALPM_LOG_DEBUG, "call to waitpid succeeded\n");
 			if(WEXITSTATUS(status) != 0) {
-				_alpm_log(handle, ALPM_LOG_ERROR, _("command '%s' failed to execute correctly\n"), cmd);
+				_alpm_log(handle, ALPM_LOG_ERROR, _("%s: command '%s' failed to execute correctly\n"), name, cmd);
 				retval = 1;
 			}
 		} else if(WIFSIGNALED(status) != 0) {
@@ -775,8 +775,8 @@ int _alpm_run_chroot(alpm_handle_t *handle, const char *cmd, char *const argv[],
 			if(signal_description == NULL) {
 				signal_description = _("Unknown signal");
 			}
-			_alpm_log(handle, ALPM_LOG_ERROR, _("command '%s' terminated by signal %d: %s\n"),
-						cmd, WTERMSIG(status), signal_description);
+			_alpm_log(handle, ALPM_LOG_ERROR, _("%s: command '%s' terminated by signal %d: %s\n"),
+						name, cmd, WTERMSIG(status), signal_description);
 			retval = 1;
 		}
 	}
@@ -810,7 +810,7 @@ int _alpm_ldconfig(alpm_handle_t *handle)
 			char arg0[32];
 			char *argv[] = { arg0, NULL };
 			strcpy(arg0, "ldconfig");
-			return _alpm_run_chroot(handle, LDCONFIG, argv, NULL, NULL);
+			return _alpm_run_chroot(handle, "ldconfig", LDCONFIG, argv, NULL, NULL);
 		}
 	}
 
